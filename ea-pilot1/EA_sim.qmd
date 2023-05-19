@@ -1,0 +1,142 @@
+---
+title: "ea_pilot_sim"
+format: html
+editor: visual
+---
+
+## Load Libraries
+
+```{r}
+library(tidyverse)
+
+```
+
+## Demographics & ID
+
+```{r}
+
+# Create a data frame with ID, Sex, and Age variables
+df <- data.frame(ID = 1:7000,
+                 sex = sample(c("Male", "Female"), 100, replace = TRUE),
+                 age = round(rnorm(100, mean = 30, sd = 10)), 
+                 country = sample(c("Brazil", "China", "Denmark", "Japan", "UK", "USA"), 100, replace = TRUE))
+
+```
+
+## Independent Variables
+
+### Create "easim" function
+
+This function will help simulate the questionnaire specific questions.
+
+Here we have loop which selects i from the sequence defined by str_pad(1:qn, 2, "left", "0"). This sequence is simply 1:qn, but forced to be at least two digits, adding a "0" to the left if this is not the case. In the function **"qn"** defines the number of questions the questionnaire has.
+
+The loop then combines each element of this index with the question label, defined by **qlab**. It then samples a response from the possible response vector **rlab**, with **rnum** defining the number of times this is sampled. This is then added to the data frame **df**.
+
+**it would also be possible to specify the rate at which each element of the response vector has by adding a vector with these probabilities after "replace = TRUE".**
+
+See anthropomorphism below for example.
+
+```{r}
+easim <- function(qn, qlab, rlab, rnum){
+
+  for (i in str_pad(1:qn, 2, "left",  "0")){
+    df[paste0(qlab, i)] <- sample(rlab, rnum, replace = TRUE)
+  }
+
+  return(df)
+
+}
+```
+
+Here we define possible **rlabs**
+
+```{r}
+
+truth <- c("Absolutely Untrue", "Mostly Untrue", "Somewhat Untrue", "Can't Say True or False", "Somewhat True", "Mostly True", "Absolutely True")
+           
+agreement <- c("Strongly Disagree", "Moderately Disagree","Slightly Disagree","Neither Agree nor Disagree","Slightly Agree", "Moderately Agree","Strongly Agree")
+
+truefalse <- c("True", "False")
+
+```
+
+### Cognitive Bias variables
+
+EXAMPLE: For Anthropomorphism here we use the easim function we created above. Specifying 10 (the number of questions), anth\_ (the question label we want), agreement (the response vector we want to sample from), and 6000, the number of cases we want to simulate.
+
+```{r}
+
+#Anthropomorphism
+
+df <- easim(10, "anth_", agreement, 7000)
+
+#Promiscuous Teleology
+
+#Schizotypy
+
+df <- easim(16, "schz_", truefalse, 7000)
+
+#Dualism
+
+df <- easim(10, "dua_", agreement, 7000)
+
+#mentalizing - has unique response
+
+df <- easim(10, "mnt_", c("Definitely Agree", "Definitely Disagree", "Slightly Agree", "Slightly Disagree"), 7000)
+
+```
+
+### Motivational variables
+
+```{r}
+
+#Social Desirability
+
+df <- easim(8, "sd_", truth, 7000)
+
+#Existential Securirty (1)
+
+#Existential Security (2)
+
+df <- easim(3, "ss_", agreement, 7000)
+
+df <- easim(3, "st_", agreement, 7000)
+
+df <- easim(3, "wi_", agreement, 7000)
+
+
+#Personal Need for Structure
+
+df <- easim(10, "nfs_", agreement, 7000)
+
+#Death Anxiety
+
+df <- easim(12, "da_", agreement, 7000)
+
+#Need for Meaning
+
+df <- easim(10, "nfm_", agreement, 7000)
+
+
+
+
+
+```
+
+re reverse scored
+
+```{r}
+
+anth_revid <- c("01", "02", "06")
+
+
+
+```
+
+```{r}
+df2 <- df %>%
+  mutate_at(vars(starts_with("anth") & ends_with(anth_revid)), agree_rev) %>%
+  mutate_at(vars(starts_with("anth") & !ends_with(anth_revid)), agree_norm)
+
+```
